@@ -451,7 +451,7 @@ public SurvFreezeChange(Handle:convar, const String:oldValue[], const String:new
 
 public Action:L4D_OnFirstSurvivorLeftSafeArea(client)
 {
-	if (inReadyUp && GetConVarBool(!l4d_ready_free_roam))
+	if (inReadyUp && !GetConVarBool(l4d_ready_free_roam))
 	{
 		ReturnTeamToSaferoom(L4D2Team_Survivor);
 		return Plugin_Handled;
