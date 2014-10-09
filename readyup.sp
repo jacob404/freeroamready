@@ -886,11 +886,13 @@ public Action:killParticle(Handle:timer, any:entity)
 DisableEntities() {
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
+  ActivateEntities("prop_door_rotating", "Open");
 }
 
 EnableEntities() {
   ActivateLockableEntities("Unlock");
   ActivateEntities("trigger_once", "Enable");
+  ActivateEntities("prop_door_rotating", "Close");
 }
 
 
