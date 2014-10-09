@@ -36,7 +36,7 @@ public OnPluginStart()
 	hStaticWitchMaps = CreateTrie();
 
 #if !DEBUG
-	HookEvent("round_start", RoundStartEvent, EventHookMode_PostNoCopy);
+	HookEvent("onroundlive", RoundStartEvent, EventHookMode_PostNoCopy);
 #endif
 
 	RegServerCmd("static_witch_map", StaticWitch_Command);
