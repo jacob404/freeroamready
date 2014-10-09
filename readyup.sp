@@ -13,6 +13,8 @@
 
 #define DEBUG 0
 
+#define LOCKABLE_ENTITY_COUNT 2
+
 public Plugin:myinfo =
 {
 	name = "L4D2 Ready-Up",
@@ -71,6 +73,11 @@ new String:countdownSound[MAX_SOUNDS][]=
 	"/npc/moustachio/strengthattract05.wav",
 	"/npc/moustachio/strengthattract06.wav",
 	"/npc/moustachio/strengthattract09.wav"
+};
+
+static const String:LOCKABLE_ENTITY_CLASSES[LOCKABLE_ENTITY_COUNT][] = {
+    "prop_door_rotating",
+    "func_button"
 };
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
@@ -451,8 +458,9 @@ public SurvFreezeChange(Handle:convar, const String:oldValue[], const String:new
 
 public Action:L4D_OnFirstSurvivorLeftSafeArea(client)
 {
-	if (inReadyUp && !GetConVarBool(l4d_ready_free_roam))
-	{
+  if (GetConVarBool(l4d_ready_free_roam)) {
+    DisableEntities();
+  } else if (inReadyUp) {
 		ReturnTeamToSaferoom(L4D2Team_Survivor);
 		return Plugin_Handled;
 	}
@@ -674,7 +682,10 @@ InitiateLive(bool:real = true)
 	footerCounter = 0;
 	if (real)
 	{
-		Call_StartForward(liveForward);
+    if (GetConVarBool(l4d_ready_free_roam)) {
+      EnableEntities();
+    }
+    Call_StartForward(liveForward);
 		Call_Finish();
 	}
 }
@@ -870,4 +881,33 @@ public Action:killParticle(Handle:timer, any:entity)
 	{
 		AcceptEntityInput(entity, "Kill");
 	}
+}
+
+DisableEntities() {
+  ActivateLockableEntities("Lock");
+  ActivateEntities("trigger_once", "Disable");
+}
+
+EnableEntities() {
+  ActivateLockableEntities("Unlock");
+  ActivateEntities("trigger_once", "Enable");
+}
+
+
+ActivateLockableEntities(String:inputName[]) {
+   for ( new i = 0; i < LOCKABLE_ENTITY_COUNT; i++ ) {
+        ActivateEntities(LOCKABLE_ENTITY_CLASSES[i], inputName);
+    }
+}
+
+ActivateEntities(String:className[], String:inputName[]) { 
+    new iEntity;
+    
+    while ( (iEntity = FindEntityByClassname(iEntity, className)) != -1 ) {
+        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+            continue;
+        }
+        
+        AcceptEntityInput(iEntity, inputName);
+    }
 }
