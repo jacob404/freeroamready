@@ -39,6 +39,7 @@ new Handle:l4d_ready_delay;
 new Handle:l4d_ready_enable_sound;
 new Handle:l4d_ready_chuckle;
 new Handle:l4d_ready_live_sound;
+new Handle:l4d_ready_free_roam;
 
 // Game Cvars
 new Handle:director_no_specials;
@@ -94,6 +95,7 @@ public OnPluginStart()
 	l4d_ready_enable_sound = CreateConVar("l4d_ready_enable_sound", "1", "Enable sound during countdown & on live");
 	l4d_ready_live_sound = CreateConVar("l4d_ready_live_sound", "buttons/blip2.wav", "The sound that plays when a round goes live");
 	l4d_ready_chuckle = CreateConVar("l4d_ready_chuckle", "0", "Enable random moustachio chuckle during countdown");
+	l4d_ready_free_roam = CreateConVar("l4d_ready_free_roam", "0", "Allow survivors and infected to warm up before the round goes live?", FCVAR_PLUGIN, true, 0.0, true, 1.0);
 	HookConVarChange(l4d_ready_survivor_freeze, SurvFreezeChange);
 
 	HookEvent("round_start", RoundStart_Event);
@@ -449,7 +451,7 @@ public SurvFreezeChange(Handle:convar, const String:oldValue[], const String:new
 
 public Action:L4D_OnFirstSurvivorLeftSafeArea(client)
 {
-	if (inReadyUp)
+	if (inReadyUp && GetConVarBool(!l4d_ready_free_roam))
 	{
 		ReturnTeamToSaferoom(L4D2Team_Survivor);
 		return Plugin_Handled;
