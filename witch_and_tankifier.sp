@@ -11,6 +11,9 @@
 #include <l4d2util>
 #include <left4downtown>
 #include <lgofnoc>
+#undef REQUIRE_PLUGIN
+#include <readyup>
+#define REQUIRE_PLUGIN
 
 public Plugin:myinfo =
 {
@@ -36,7 +39,7 @@ public OnPluginStart()
 	hStaticWitchMaps = CreateTrie();
 
 #if !DEBUG
-	HookEvent("onroundlive", RoundStartEvent, EventHookMode_PostNoCopy);
+	HookEvent("OnRoundIsLive", RoundStartEvent, EventHookMode_PostNoCopy);
 #endif
 
 	RegServerCmd("static_witch_map", StaticWitch_Command);
