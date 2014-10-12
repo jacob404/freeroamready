@@ -884,19 +884,34 @@ public Action:killParticle(Handle:timer, any:entity)
 }
 
 DisableEntities() {
-  ActivateEntities("prop_door_rotating", "Open");
-  ActivateEntities("prop_door_rotating", "SetUnbreakable");
+  //ActivateEntities("prop_door_rotating", "Open");
+  //ActivateEntities("prop_door_rotating", "SetUnbreakable");
+  new Float:MoveBy[3] = {0.0, 0.0, 10000.0};
+  MoveDoors(MoveBy);
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
 }
 
 EnableEntities() {
+  new Float:MoveBy[3] = {0.0, 0.0, -10000.0};
+  MoveDoors(MoveBy);
   ActivateLockableEntities("Unlock");
   ActivateEntities("trigger_once", "Enable");
-  ActivateEntities("prop_door_rotating", "Close");
-  ActivateEntities("prop_door_rotating", "SetBreakable");
+  //ActivateEntities("prop_door_rotating", "Close");
+  //ActivateEntities("prop_door_rotating", "SetBreakable");
 }
 
+MoveDoors(Float:MoveBy[3]) {
+    new iEntity;
+    
+    while ( (iEntity = FindEntityByClassname(iEntity, "prop_door_rotating")) != -1 ) {
+        new Float:Pos[3];
+        new Float:NewPos[3];
+        GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", Pos);
+        AddVectors(Pos, MoveBy, NewPos);
+        SetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", NewPos);
+     }
+}
 
 ActivateLockableEntities(String:inputName[]) {
    for ( new i = 0; i < LOCKABLE_ENTITY_COUNT; i++ ) {
