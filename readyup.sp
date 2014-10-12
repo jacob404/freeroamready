@@ -905,6 +905,10 @@ MoveDoors(Float:MoveBy[3]) {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "prop_door_rotating")) != -1 ) {
+        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+            continue;
+        }
+        
         new Float:Pos[3];
         new Float:NewPos[3];
         GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", Pos);
