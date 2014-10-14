@@ -884,23 +884,20 @@ public Action:killParticle(Handle:timer, any:entity)
 }
 
 DisableEntities() {
-  //ActivateEntities("prop_door_rotating", "Open");
-  //ActivateEntities("prop_door_rotating", "SetUnbreakable");
-  new Float:MoveBy[3] = {0.0, 0.0, 1000.0};
-  MoveDoors(MoveBy);
+  ActivateEntities("prop_door_rotating", "Open");
+  ActivateEntities("prop_door_rotating", "SetUnbreakable");
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
   ActivateEntities("prop_physics", "DisableMotion");
+  MakeWallsUnbreakable();
 }
 
 EnableEntities() {
-  new Float:MoveBy[3] = {0.0, 0.0, -1000.0};
-  MoveDoors(MoveBy);
   ActivateLockableEntities("Unlock");
   ActivateEntities("trigger_once", "Enable");
   ActivateEntities("prop_physics", "EnableMotion");
-  //ActivateEntities("prop_door_rotating", "Close");
-  //ActivateEntities("prop_door_rotating", "SetBreakable");
+  ActivateEntities("prop_door_rotating", "Close");
+  ActivateEntities("prop_door_rotating", "SetBreakable");
 }
 
 MoveDoors(Float:MoveBy[3]) {
@@ -936,3 +933,16 @@ ActivateEntities(String:className[], String:inputName[]) {
         AcceptEntityInput(iEntity, inputName);
     }
 }
+
+MakeWallsUnbreakable() {
+    new iEntity;
+    
+    while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
+        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+            continue;
+        }
+        
+        SetEntityHealth(iEntity, 10000);
+     }
+}
+
