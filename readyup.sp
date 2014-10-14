@@ -934,17 +934,24 @@ ActivateEntities(String:className[], String:inputName[]) {
     }
 }
 
+
 MakeWallsUnbreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
-        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+
+         if ( !IsValidEdict(iEntity)) {
+			PrintToChatAll("Found func_breakable, was not valid edict.");
             continue;
         }
         
+        if ( !IsValidEntity(iEntity) ) {
+			PrintToChatAll("Found func_breakable, was not valid entity.");
+            continue;
+        }
+
         //SetEntityHealth(iEntity, 10000);
         //SetEntityFlags(iEntity, 1024);
-        DispatchKeyValueFloat(iEntity, "Strength", 0.0);
+        DispatchKeyValueFloat(iEntity, "health", 0.0);
      }
 }
-
