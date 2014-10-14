@@ -886,17 +886,19 @@ public Action:killParticle(Handle:timer, any:entity)
 DisableEntities() {
   //ActivateEntities("prop_door_rotating", "Open");
   //ActivateEntities("prop_door_rotating", "SetUnbreakable");
-  new Float:MoveBy[3] = {0.0, 0.0, 10000.0};
+  new Float:MoveBy[3] = {0.0, 0.0, 1000.0};
   MoveDoors(MoveBy);
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
+  ActivateEntities("prop_physics", "DisableMotion");
 }
 
 EnableEntities() {
-  new Float:MoveBy[3] = {0.0, 0.0, -10000.0};
+  new Float:MoveBy[3] = {0.0, 0.0, -1000.0};
   MoveDoors(MoveBy);
   ActivateLockableEntities("Unlock");
   ActivateEntities("trigger_once", "Enable");
+  ActivateEntities("prop_physics", "EnableMotion");
   //ActivateEntities("prop_door_rotating", "Close");
   //ActivateEntities("prop_door_rotating", "SetBreakable");
 }
