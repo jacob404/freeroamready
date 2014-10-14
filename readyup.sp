@@ -942,7 +942,8 @@ MakeWallsUnbreakable() {
             continue;
         }
         
-        SetEntityHealth(iEntity, 10000);
+        //SetEntityHealth(iEntity, 10000);
+        SetEntityFlags(iEntity, 1024);
      }
 }
 
