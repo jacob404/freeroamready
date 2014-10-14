@@ -937,13 +937,14 @@ ActivateEntities(String:className[], String:inputName[]) {
 MakeWallsUnbreakable() {
     new iEntity;
     
-    while ( (iEntity = FindEntityByClassname(iEntity, "func_illusionary")) != -1 ) {
+    while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
         if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
             continue;
         }
         
         //SetEntityHealth(iEntity, 10000);
-        SetEntityFlags(iEntity, 1024);
+        //SetEntityFlags(iEntity, 1024);
+        DispatchKeyValueFloat(iEntity, "Strength", 0.0);
      }
 }
 
