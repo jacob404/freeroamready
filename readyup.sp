@@ -940,18 +940,29 @@ MakeWallsUnbreakable() {
     
     while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
 
-         if ( !IsValidEdict(iEntity)) {
-			PrintToChatAll("Found func_breakable, was not valid edict.");
-            continue;
-        }
-        
-        if ( !IsValidEntity(iEntity) ) {
-			PrintToChatAll("Found func_breakable, was not valid entity.");
+		PrintToChatAll("Found func_breakable");
+
+        if ( !IsValidEdict(iEntity)) {
             continue;
         }
 
+        PrintToChatAll("func_breakable is valid edict");
+        
+        if ( !IsValidEntity(iEntity) ) {
+            continue;
+        }
+
+        PrintToChatAll("func_breakable is valid entity.");
+
         //SetEntityHealth(iEntity, 10000);
         //SetEntityFlags(iEntity, 1024);
-        DispatchKeyValueFloat(iEntity, "health", 0.0);
+        //DispatchKeyValueFloat(iEntity, "Strength", 0.0);
+		new iResult = DispatchKeyValueFloat(iEntity, "health", 10000.0);
+        if (iResult == 1) {
+          PrintToChatAll("Successfully changed health.");
+        } else {
+           PrintToChatAll("Failed to change health, %d", iResult);
+        }
+
      }
 }
