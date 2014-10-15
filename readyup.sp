@@ -888,6 +888,7 @@ DisableEntities() {
   ActivateEntities("prop_door_rotating", "SetUnbreakable");
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
+  ActivateEntities("trigger_multiple", "Disable");
   ActivateEntities("prop_physics", "DisableMotion");
   MakeWallsUnbreakable();
   MakePropsUnbreakable();
@@ -896,9 +897,12 @@ DisableEntities() {
 EnableEntities() {
   ActivateLockableEntities("Unlock");
   ActivateEntities("trigger_once", "Enable");
+  ActivateEntities("trigger_multiple", "Enable");
   ActivateEntities("prop_physics", "EnableMotion");
   ActivateEntities("prop_door_rotating", "Close");
   ActivateEntities("prop_door_rotating", "SetBreakable");
+  MakeWallsBreakable();
+  MakePropsBreakable();
 }
 
 MoveDoors(Float:MoveBy[3]) {
@@ -961,5 +965,33 @@ MakePropsUnbreakable() {
             continue;
         }
 		DispatchKeyValueFloat(iEntity, "minhealthdmg", 10000.0);
+     }
+}
+
+MakeWallsBreakable() {
+    new iEntity;
+    
+    while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
+        if ( !IsValidEdict(iEntity)) {
+            continue;
+        }
+        if ( !IsValidEntity(iEntity) ) {
+            continue;
+        }
+		DispatchKeyValueFloat(iEntity, "health", 1.0);
+     }
+}
+
+MakePropsBreakable() {
+    new iEntity;
+    
+    while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
+        if ( !IsValidEdict(iEntity)) {
+            continue;
+        }
+        if ( !IsValidEntity(iEntity) ) {
+            continue;
+        }
+		DispatchKeyValueFloat(iEntity, "minhealthdmg", 5.0);
      }
 }
