@@ -49,6 +49,7 @@ new Handle:god;
 new Handle:sb_stop;
 new Handle:survivor_limit;
 new Handle:z_max_player_zombies;
+new Handle:z_common_limit;
 
 new Handle:casterTrie;
 new Handle:liveForward;
@@ -119,6 +120,7 @@ public OnPluginStart()
 	sb_stop = FindConVar("sb_stop");
 	survivor_limit = FindConVar("survivor_limit");
 	z_max_player_zombies = FindConVar("z_max_player_zombies");
+	z_common_limit = FindConVar("z_common_limit");
 
 	RegAdminCmd("sm_caster", Caster_Cmd, ADMFLAG_BAN, "Registers a player as a caster so the round will not go live unless they are ready");
 	RegAdminCmd("sm_forcestart", ForceStart_Cmd, ADMFLAG_BAN, "Forces the round to start regardless of player ready status.  Players can unready to stop a force");
@@ -896,6 +898,7 @@ DisableEntities() {
   DisableMotionAndRecordAffectedEntities();
   MakeWallsUnbreakable();
   MakePropsUnbreakable();
+  DisableCommons();
 }
 
 EnableEntities() {
@@ -908,6 +911,7 @@ EnableEntities() {
   ActivateEntities("prop_door_rotating", "SetBreakable");
   MakeWallsBreakable();
   MakePropsBreakable();
+  EnableCommons();
 }
 
 MoveDoors(Float:MoveBy[3]) {
@@ -1023,4 +1027,14 @@ EnableMotionForDisabledEntities() {
     AcceptEntityInput(iEntity, "EnableMotion");
   }
   ClearArray(motionDisabledEntities);
+}
+
+DisableCommons()
+{
+	SetConVarInt(z_common_limit, 0);
+}
+
+EnableCommons()
+{
+	ResetConVar(z_common_limit);
 }
