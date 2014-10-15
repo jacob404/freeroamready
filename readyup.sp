@@ -63,6 +63,7 @@ new footerCounter = 0;
 new readyDelay;
 new bool:blockSecretSpam[MAXPLAYERS + 1];
 new String:liveSound[256];
+new Handle:	motionDisabledEntities = INVALID_HANDLE;
 
 new Handle:allowedCastersTrie;
 
@@ -110,6 +111,8 @@ public OnPluginStart()
 
 	casterTrie = CreateTrie();
 	allowedCastersTrie = CreateTrie();
+  
+  motionDisabledEntities = CreateArray();
 
 	director_no_specials = FindConVar("director_no_specials");
 	god = FindConVar("god");
@@ -890,7 +893,7 @@ DisableEntities() {
   ActivateEntities("trigger_once", "Disable");
   ActivateEntities("trigger_multiple", "Disable");
   ActivateEntities("trigger_hurt_ghost", "Disable");
-  ActivateEntities("prop_physics", "DisableMotion");
+  DisableMotionAndRecordAffectedEntities();
   MakeWallsUnbreakable();
   MakePropsUnbreakable();
 }
@@ -900,7 +903,7 @@ EnableEntities() {
   ActivateEntities("trigger_once", "Enable");
   ActivateEntities("trigger_multiple", "Enable");
   ActivateEntities("trigger_hurt_ghost", "Enable");
-  ActivateEntities("prop_physics", "EnableMotion");
+  EnableMotionForDisabledEntities();
   ActivateEntities("prop_door_rotating", "Close");
   ActivateEntities("prop_door_rotating", "SetBreakable");
   MakeWallsBreakable();
@@ -946,10 +949,7 @@ MakeWallsUnbreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
-        if ( !IsValidEdict(iEntity)) {
-            continue;
-        }
-        if ( !IsValidEntity(iEntity) ) {
+        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
             continue;
         }
 		DispatchKeyValueFloat(iEntity, "health", 10000.0);
@@ -960,10 +960,7 @@ MakePropsUnbreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
-        if ( !IsValidEdict(iEntity)) {
-            continue;
-        }
-        if ( !IsValidEntity(iEntity) ) {
+        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
             continue;
         }
 		DispatchKeyValueFloat(iEntity, "minhealthdmg", 10000.0);
@@ -974,10 +971,7 @@ MakeWallsBreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
-        if ( !IsValidEdict(iEntity)) {
-            continue;
-        }
-        if ( !IsValidEntity(iEntity) ) {
+        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
             continue;
         }
 		DispatchKeyValueFloat(iEntity, "health", 1.0);
@@ -988,12 +982,45 @@ MakePropsBreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
-        if ( !IsValidEdict(iEntity)) {
+        if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
             continue;
         }
-        if ( !IsValidEntity(iEntity) ) {
-            continue;
-        }
-		DispatchKeyValueFloat(iEntity, "minhealthdmg", 5.0);
+      DispatchKeyValueFloat(iEntity, "minhealthdmg", 5.0);
      }
+}
+
+DisableMotionAndRecordAffectedEntities() {
+  new iEntity;
+  
+  PrintToChatAll("Disabling motion for prop_physics entities");
+  
+  while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
+      if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
+          continue;
+      }
+      PrintToChatAll("Found prop_physics entity");
+      new entityFlags = GetEntityFlags(iEntity);
+      if ((entityFlags & 8) == 0) {
+        PrintToChatAll("Disabling motion for entity %d", iEntity);
+        PushArrayCell(motionDisabledEntities, iEntity);
+        AcceptEntityInput(iEntity, "DisableMotion");
+      }
+   }
+}
+
+
+EnableMotionForDisabledEntities() {
+  new motionDisabledSize = GetArraySize(motionDisabledEntities);
+  
+  PrintToChatAll("Enabling motion for %d prop_physics entities", motionDisabledSize);
+  
+  for ( new i = 0; i < motionDisabledSize; i++ ) {
+    new iEntity = GetArrayCell(motionDisabledEntities, i);
+    if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
+      continue;
+    }
+    PrintToChatAll("Found disabled prop_physics entity %d", iEntity);
+    AcceptEntityInput(iEntity, "EnableMotion");
+  }
+  ClearArray(motionDisabledEntities);
 }
