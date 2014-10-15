@@ -889,6 +889,7 @@ DisableEntities() {
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
   ActivateEntities("trigger_multiple", "Disable");
+  ActivateEntities("trigger_hurt_ghost", "Disable");
   ActivateEntities("prop_physics", "DisableMotion");
   MakeWallsUnbreakable();
   MakePropsUnbreakable();
@@ -898,6 +899,7 @@ EnableEntities() {
   ActivateLockableEntities("Unlock");
   ActivateEntities("trigger_once", "Enable");
   ActivateEntities("trigger_multiple", "Enable");
+  ActivateEntities("trigger_hurt_ghost", "Enable");
   ActivateEntities("prop_physics", "EnableMotion");
   ActivateEntities("prop_door_rotating", "Close");
   ActivateEntities("prop_door_rotating", "SetBreakable");
