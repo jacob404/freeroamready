@@ -899,6 +899,7 @@ DisableEntities() {
   ActivateEntities("trigger_once", "Disable");
   ActivateEntities("trigger_multiple", "Disable");
   ActivateEntities("trigger_hurt_ghost", "Disable");
+  ActivateEntities("prop_car_alarm", "Disable");
   DisableMotionAndRecordAffectedEntities();
   MakeWallsUnbreakable();
   MakePropsUnbreakable();
@@ -910,6 +911,7 @@ EnableEntities() {
   ActivateEntities("trigger_once", "Enable");
   ActivateEntities("trigger_multiple", "Enable");
   ActivateEntities("trigger_hurt_ghost", "Enable");
+  ActivateEntities("prop_car_alarm", "Enable");
   EnableMotionForDisabledEntities();
   CloseDoorsThatWereOpened();
   ActivateEntities("prop_door_rotating", "SetBreakable");
@@ -984,8 +986,6 @@ MakePropsBreakable() {
 DisableMotionAndRecordAffectedEntities() {
   new iEntity;
 
-  PrintToChatAll("Disabling motion for entities");
-  
   while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
       if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
           continue;
