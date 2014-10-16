@@ -696,8 +696,6 @@ InitiateLive(bool:real = true)
 	SetConVarBool(god, false);
 	SetConVarFlags(god, GetConVarFlags(god) | FCVAR_NOTIFY);
 	SetConVarBool(sb_stop, false);
-
-  ForceSpawns();
   
 	L4D2_CTimerStart(L4D2CT_VersusStartTimer, 60.0);
 
@@ -805,6 +803,7 @@ InitiateLiveCountdown()
 {
 	if (readyCountdownTimer == INVALID_HANDLE)
 	{
+    ForceSpawns();
 		ReturnTeamToSaferoom(L4D2Team_Survivor);
 		SetTeamFrozen(L4D2Team_Survivor, true);
 		PrintHintTextToAll("Going live!\nSay !unready to cancel");
