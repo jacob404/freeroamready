@@ -1112,7 +1112,9 @@ ForceSpawns() {
 
   for (new index = 1; index < MaxClients; index++) {
     if (IsClientInGame(index) && GetClientTeam(index) == 3) {
-      AcceptEntityInput(MakeCompatEntRef(GetEntProp(index, Prop_Send, "m_customAbility")), "Kill");
+      ChangeClientTeam(index, 1);
+      ChangeClientTeam(index, 3);
+      //AcceptEntityInput(MakeCompatEntRef(GetEntProp(index, Prop_Send, "m_customAbility")), "Kill");
     }
   }
 }
