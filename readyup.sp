@@ -984,20 +984,19 @@ MakePropsBreakable() {
 DisableMotionAndRecordAffectedEntities() {
   new iEntity;
 
+  PrintToChatAll("Disabling motion for entities");
+  
   while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
       if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
           continue;
       }
       
-      new String:model[80];
-      GetEntPropString(iEntity, Prop_Data, "m_ModelName", model, sizeof(model));
-      if (StrContains(model, "vent", false) == -1 && StrContains(model, "glass", false) == -1 && StrContains(model, "extinguisher", false) == -1) {
+      if (HasSpawnFlags(iEntity, 8) == 0) {
         PushArrayCell(motionDisabledEntities, iEntity);
         AcceptEntityInput(iEntity, "DisableMotion");
       }
    }
 }
-
 
 EnableMotionForDisabledEntities() {
   new motionDisabledSize = GetArraySize(motionDisabledEntities);
