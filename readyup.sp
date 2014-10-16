@@ -1006,7 +1006,7 @@ DisableMotionAndRecordAffectedEntities() {
       new String:model[80];
       GetEntPropString(iEntity, Prop_Data, "m_ModelName", model, sizeof(model));
       PrintToChatAll("Entity has model %s", model);
-      if (!StrContains(model, "vent", false) && !StrContains(model, "glass", false)) {
+      if (StrContains(model, "vent", false) == -1 && StrContains(model, "glass", false) == -1) {
         PrintToChatAll("Disabling motion for entity %d", iEntity);
         PushArrayCell(motionDisabledEntities, iEntity);
         AcceptEntityInput(iEntity, "DisableMotion");
