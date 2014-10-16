@@ -65,6 +65,7 @@ new readyDelay;
 new bool:blockSecretSpam[MAXPLAYERS + 1];
 new String:liveSound[256];
 new Handle:	motionDisabledEntities = INVALID_HANDLE;
+new Handle:	openedDoors = INVALID_HANDLE;
 
 new Handle:allowedCastersTrie;
 
@@ -114,6 +115,7 @@ public OnPluginStart()
 	allowedCastersTrie = CreateTrie();
   
   motionDisabledEntities = CreateArray();
+  openedDoors = CreateArray();
 
 	director_no_specials = FindConVar("director_no_specials");
 	god = FindConVar("god");
@@ -172,6 +174,8 @@ public OnMapStart()
 /* This ensures all cvars are reset if the map is changed during ready-up */
 public OnMapEnd()
 {
+  ClearArray(motionDisabledEntities);
+  ClearArray(openedDoors);
 	if (inReadyUp)
 		InitiateLive(false);
 }
@@ -889,7 +893,7 @@ public Action:killParticle(Handle:timer, any:entity)
 }
 
 DisableEntities() {
-  ActivateEntities("prop_door_rotating", "Open");
+  OpenClosedDoors();
   ActivateEntities("prop_door_rotating", "SetUnbreakable");
   ActivateLockableEntities("Lock");
   ActivateEntities("trigger_once", "Disable");
@@ -907,27 +911,11 @@ EnableEntities() {
   ActivateEntities("trigger_multiple", "Enable");
   ActivateEntities("trigger_hurt_ghost", "Enable");
   EnableMotionForDisabledEntities();
-  ActivateEntities("prop_door_rotating", "Close");
+  CloseDoorsThatWereOpened();
   ActivateEntities("prop_door_rotating", "SetBreakable");
   MakeWallsBreakable();
   MakePropsBreakable();
   EnableCommons();
-}
-
-MoveDoors(Float:MoveBy[3]) {
-    new iEntity;
-    
-    while ( (iEntity = FindEntityByClassname(iEntity, "prop_door_rotating")) != -1 ) {
-        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
-            continue;
-        }
-        
-        new Float:Pos[3];
-        new Float:NewPos[3];
-        GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", Pos);
-        AddVectors(Pos, MoveBy, NewPos);
-        SetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", NewPos);
-     }
 }
 
 ActivateLockableEntities(String:inputName[]) {
@@ -1032,4 +1020,43 @@ DisableCommons()
 EnableCommons()
 {
 	ResetConVar(z_common_limit);
+}
+
+GetSpawnFlags(entity) {
+	return GetEntProp(entity, Prop_Data, "m_spawnflags");
+}
+
+bool:HasSpawnFlags(entity, flags) {	
+	return bool:(GetSpawnFlags(entity) & flags);
+}
+
+OpenClosedDoors() {
+  new iEntity;
+
+  while ( (iEntity = FindEntityByClassname(iEntity, "prop_door_rotating")) != -1 ) {
+      if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
+          continue;
+      }
+
+      new spawnPosition = GetEntProp(iEntity, Prop_Data, "m_eSpawnPosition");
+      
+      if (spawnPosition == 0) {
+        PushArrayCell(openedDoors, iEntity);
+        AcceptEntityInput(iEntity, "Open");
+      }
+   }
+}
+
+CloseDoorsThatWereOpened() {
+  new openedDoorsSize = GetArraySize(openedDoors);
+  
+  for ( new i = 0; i < openedDoorsSize; i++ ) {
+    new iEntity = GetArrayCell(openedDoors, i);
+    if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
+      continue;
+    }
+
+    AcceptEntityInput(iEntity, "Close");
+  }
+  ClearArray(openedDoors);
 }
