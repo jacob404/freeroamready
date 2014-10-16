@@ -995,9 +995,7 @@ MakePropsBreakable() {
 
 DisableMotionAndRecordAffectedEntities() {
   new iEntity;
-  
-  PrintToChatAll("Disabling motion for prop_physics entities");
-  
+
   while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
       if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
           continue;
@@ -1005,9 +1003,7 @@ DisableMotionAndRecordAffectedEntities() {
       
       new String:model[80];
       GetEntPropString(iEntity, Prop_Data, "m_ModelName", model, sizeof(model));
-      PrintToChatAll("Entity has model %s", model);
-      if (StrContains(model, "vent", false) == -1 && StrContains(model, "glass", false) == -1) {
-        PrintToChatAll("Disabling motion for entity %d", iEntity);
+      if (StrContains(model, "vent", false) == -1 && StrContains(model, "glass", false) == -1 && StrContains(model, "extinguisher", false) == -1) {
         PushArrayCell(motionDisabledEntities, iEntity);
         AcceptEntityInput(iEntity, "DisableMotion");
       }
@@ -1018,14 +1014,11 @@ DisableMotionAndRecordAffectedEntities() {
 EnableMotionForDisabledEntities() {
   new motionDisabledSize = GetArraySize(motionDisabledEntities);
   
-  PrintToChatAll("Enabling motion for %d prop_physics entities", motionDisabledSize);
-  
   for ( new i = 0; i < motionDisabledSize; i++ ) {
     new iEntity = GetArrayCell(motionDisabledEntities, i);
     if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
       continue;
     }
-    PrintToChatAll("Found disabled prop_physics entity %d", iEntity);
     AcceptEntityInput(iEntity, "EnableMotion");
   }
   ClearArray(motionDisabledEntities);
