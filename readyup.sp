@@ -13,8 +13,6 @@
 
 #define DEBUG 0
 
-#define LOCKABLE_ENTITY_COUNT 2
-
 public Plugin:myinfo =
 {
 	name = "L4D2 Ready-Up",
@@ -51,6 +49,17 @@ new Handle:survivor_limit;
 new Handle:z_max_player_zombies;
 new Handle:z_common_limit;
 
+new Handle:z_versus_smoker_limit;
+new Handle:z_versus_hunter_limit;
+new Handle:z_versus_charger_limit;
+new Handle:z_versus_jockey_limit;
+new Handle:z_versus_spitter_limit;
+new Handle:z_versus_boomer_limit;
+
+new Handle:z_ghost_delay_min;
+new Handle:z_ghost_delay_max;
+new Handle:z_ghost_delay_minspawn;
+
 new Handle:casterTrie;
 new Handle:liveForward;
 new Handle:menuPanel;
@@ -77,6 +86,8 @@ new String:countdownSound[MAX_SOUNDS][]=
 	"/npc/moustachio/strengthattract06.wav",
 	"/npc/moustachio/strengthattract09.wav"
 };
+
+#define LOCKABLE_ENTITY_COUNT 2
 
 static const String:LOCKABLE_ENTITY_CLASSES[LOCKABLE_ENTITY_COUNT][] = {
     "prop_door_rotating",
@@ -124,6 +135,17 @@ public OnPluginStart()
 	z_max_player_zombies = FindConVar("z_max_player_zombies");
 	z_common_limit = FindConVar("z_common_limit");
 
+	z_versus_smoker_limit = FindConVar("z_versus_smoker_limit");
+	z_versus_hunter_limit = FindConVar("z_versus_hunter_limit");
+	z_versus_charger_limit = FindConVar("z_versus_charger_limit");
+	z_versus_jockey_limit = FindConVar("z_versus_jockey_limit");
+	z_versus_spitter_limit = FindConVar("z_versus_spitter_limit");
+	z_versus_boomer_limit = FindConVar("z_versus_boomer_limit");
+
+	z_ghost_delay_min = FindConVar("z_ghost_delay_min");
+	z_ghost_delay_max = FindConVar("z_ghost_delay_max");
+	z_ghost_delay_minspawn = FindConVar("z_ghost_delay_minspawn");
+  
 	RegAdminCmd("sm_caster", Caster_Cmd, ADMFLAG_BAN, "Registers a player as a caster so the round will not go live unless they are ready");
 	RegAdminCmd("sm_forcestart", ForceStart_Cmd, ADMFLAG_BAN, "Forces the round to start regardless of player ready status.  Players can unready to stop a force");
 	RegAdminCmd("sm_fs", ForceStart_Cmd, ADMFLAG_BAN, "Forces the round to start regardless of player ready status.  Players can unready to stop a force");
@@ -675,6 +697,8 @@ InitiateLive(bool:real = true)
 	SetConVarFlags(god, GetConVarFlags(god) | FCVAR_NOTIFY);
 	SetConVarBool(sb_stop, false);
 
+  ForceSpawns();
+  
 	L4D2_CTimerStart(L4D2CT_VersusStartTimer, 60.0);
 
 	for (new i = 0; i < 4; i++)
@@ -893,6 +917,7 @@ public Action:killParticle(Handle:timer, any:entity)
 }
 
 DisableEntities() {
+  RemoveItemsFromMap();
   OpenClosedDoors();
   ActivateEntities("prop_door_rotating", "SetUnbreakable");
   ActivateLockableEntities("Lock");
@@ -918,6 +943,7 @@ EnableEntities() {
   MakeWallsBreakable();
   MakePropsBreakable();
   EnableCommons();
+  ResetSILimits();
 }
 
 ActivateLockableEntities(String:inputName[]) {
@@ -943,44 +969,44 @@ MakeWallsUnbreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
-        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
-            continue;
-        }
-		DispatchKeyValueFloat(iEntity, "health", 10000.0);
-     }
+      if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+          continue;
+      }
+      DispatchKeyValueFloat(iEntity, "health", 10000.0);
+    }
 }
 
 MakePropsUnbreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
-        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
-            continue;
-        }
-		DispatchKeyValueFloat(iEntity, "minhealthdmg", 10000.0);
-     }
+      if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+          continue;
+      }
+      DispatchKeyValueFloat(iEntity, "minhealthdmg", 10000.0);
+    }
 }
 
 MakeWallsBreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "func_breakable")) != -1 ) {
-        if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
-            continue;
-        }
-		DispatchKeyValueFloat(iEntity, "health", 1.0);
-     }
+      if ( !IsValidEdict(iEntity) || !IsValidEntity(iEntity) ) {
+          continue;
+      }
+      DispatchKeyValueFloat(iEntity, "health", 1.0);
+    }
 }
 
 MakePropsBreakable() {
     new iEntity;
     
     while ( (iEntity = FindEntityByClassname(iEntity, "prop_physics")) != -1 ) {
-        if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
-            continue;
-        }
+      if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
+          continue;
+      }
       DispatchKeyValueFloat(iEntity, "minhealthdmg", 5.0);
-     }
+    }
 }
 
 DisableMotionAndRecordAffectedEntities() {
@@ -1059,3 +1085,45 @@ CloseDoorsThatWereOpened() {
   }
   ClearArray(openedDoors);
 }
+
+RemoveItemsFromMap() {
+  new iEntity;
+
+  while ( (iEntity = FindEntityByClassname(iEntity, "weapon_pain_pills_spawn")) != -1 ) {
+    if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
+        continue;
+    }
+    
+    new Float:entityPosition[3];
+    GetEntPropVector(iEntity, Prop_Data, "m_vecOrigin", entityPosition);
+    
+    PrintToChatAll("Found pills %d at %f %f %f", iEntity, entityPosition[0], entityPosition[1], entityPosition[2]);
+    //AcceptEntityInput(iEntity, "Kill");
+  }
+}
+
+ForceSpawns() {
+  SetConVarInt(z_versus_boomer_limit, 0);
+  SetConVarInt(z_versus_jockey_limit, 0);
+
+  SetConVarInt(z_ghost_delay_min, 1);
+  SetConVarInt(z_ghost_delay_max, 1);
+  SetConVarInt(z_ghost_delay_minspawn, 1);
+
+  for (new index = 1; index < MaxClients; index++) {
+    if (IsClientInGame(index) && GetClientTeam(index) == 3) {
+      AcceptEntityInput(MakeCompatEntRef(GetEntProp(index, Prop_Send, "m_customAbility")), "Kill");
+    }
+  }
+}
+
+ResetSILimits() {
+  ResetConVar(z_ghost_delay_min);
+  ResetConVar(z_ghost_delay_max);
+  ResetConVar(z_ghost_delay_minspawn);
+
+  ResetConVar(z_versus_boomer_limit);
+  ResetConVar(z_versus_jockey_limit);
+}
+
+
