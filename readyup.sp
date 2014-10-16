@@ -1002,12 +1002,11 @@ DisableMotionAndRecordAffectedEntities() {
       if ( !IsValidEdict(iEntity) ||  !IsValidEntity(iEntity) ) {
           continue;
       }
-      PrintToChatAll("Found prop_physics entity");
-      new entityFlags = GetEntityFlags(iEntity);
-      PrintToChatAll("Flags for entity (%d), bitwise and'd with 8 (%d)", entityFlags, entityFlags & 8);
-      new edictFlags = GetEdictFlags(iEntity);
-      PrintToChatAll("Flags for edict (%d), bitwise and'd with 8 (%d)", edictFlags, edictFlags & 8);
-      if ((entityFlags & 8) == 0) {
+      
+      new String:model[80];
+      GetClientModel(iEntity, model, 80);
+      PrintToChatAll("Entity has model %s", model);
+      if (!StrContains(model, "vent", false) && !StrContains(model, "glass", false)) {
         PrintToChatAll("Disabling motion for entity %d", iEntity);
         PushArrayCell(motionDisabledEntities, iEntity);
         AcceptEntityInput(iEntity, "DisableMotion");
