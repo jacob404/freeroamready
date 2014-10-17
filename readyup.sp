@@ -60,6 +60,12 @@ new Handle:z_ghost_delay_min;
 new Handle:z_ghost_delay_max;
 new Handle:z_ghost_delay_minspawn;
 
+new bool:inFreeRoam = false;
+new bool:inSecondSafeRoomLeave = false;
+
+new propinfoghost;
+new versusMaxDistanceScore;
+
 new Handle:casterTrie;
 new Handle:liveForward;
 new Handle:menuPanel;
@@ -75,6 +81,8 @@ new bool:blockSecretSpam[MAXPLAYERS + 1];
 new String:liveSound[256];
 new Handle:	motionDisabledEntities = INVALID_HANDLE;
 new Handle:	openedDoors = INVALID_HANDLE;
+
+
 
 new Handle:allowedCastersTrie;
 
@@ -146,6 +154,8 @@ public OnPluginStart()
 	z_ghost_delay_max = FindConVar("z_ghost_delay_max");
 	z_ghost_delay_minspawn = FindConVar("z_ghost_delay_minspawn");
   
+  propinfoghost = FindSendPropInfo("CTerrorPlayer", "m_isGhost");
+
 	RegAdminCmd("sm_caster", Caster_Cmd, ADMFLAG_BAN, "Registers a player as a caster so the round will not go live unless they are ready");
 	RegAdminCmd("sm_forcestart", ForceStart_Cmd, ADMFLAG_BAN, "Forces the round to start regardless of player ready status.  Players can unready to stop a force");
 	RegAdminCmd("sm_fs", ForceStart_Cmd, ADMFLAG_BAN, "Forces the round to start regardless of player ready status.  Players can unready to stop a force");
@@ -198,6 +208,7 @@ public OnMapEnd()
 {
   ClearArray(motionDisabledEntities);
   ClearArray(openedDoors);
+  inFreeRoam = false;
 	if (inReadyUp)
 		InitiateLive(false);
 }
@@ -478,6 +489,15 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 			}
 		}
 	}
+  
+  if (inSecondSafeRoomLeave) {
+    if (IsClientInGame(client) && GetClientTeam(client) == 3 && IsPlayerSpawnGhost(client)) {
+      if ((buttons & IN_ATTACK != 0)) {
+        return Plugin_Handled ;
+      } 
+    }
+  }
+  return Plugin_Continue;
 }
 
 public SurvFreezeChange(Handle:convar, const String:oldValue[], const String:newValue[])
@@ -489,11 +509,15 @@ public SurvFreezeChange(Handle:convar, const String:oldValue[], const String:new
 
 public Action:L4D_OnFirstSurvivorLeftSafeArea(client)
 {
-  if (GetConVarBool(l4d_ready_free_roam)) {
-    DisableEntities();
-  } else if (inReadyUp) {
-		ReturnTeamToSaferoom(L4D2Team_Survivor);
-		return Plugin_Handled;
+  if (inReadyUp) {
+    if (GetConVarBool(l4d_ready_free_roam)) {
+      if (!inFreeRoam) {
+        DisableEntities();
+      }
+    } else {
+      ReturnTeamToSaferoom(L4D2Team_Survivor);
+      return Plugin_Handled;
+    }
 	}
 	return Plugin_Continue;
 }
@@ -928,6 +952,9 @@ DisableEntities() {
   MakeWallsUnbreakable();
   MakePropsUnbreakable();
   DisableCommons();
+  versusMaxDistanceScore = L4D_GetVersusMaxCompletionScore();
+  L4D_SetVersusMaxCompletionScore(0);
+  inFreeRoam = true;
 }
 
 EnableEntities() {
@@ -943,6 +970,9 @@ EnableEntities() {
   MakePropsBreakable();
   EnableCommons();
   ResetSILimits();
+  L4D_SetVersusMaxCompletionScore(versusMaxDistanceScore);
+  inSecondSafeRoomLeave = true;
+  CreateTimer(0.05, SurvivorsLeaveSaferoomTimer, INVALID_HANDLE, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 ActivateLockableEntities(String:inputName[]) {
@@ -1109,11 +1139,11 @@ ForceSpawns() {
   SetConVarInt(z_ghost_delay_max, 1);
   SetConVarInt(z_ghost_delay_minspawn, 1);
 
-  for (new index = 1; index < MaxClients; index++) {
-    if (IsClientInGame(index) && GetClientTeam(index) == 3) {
-      ChangeClientTeam(index, 1);
-      ChangeClientTeam(index, 3);
-      //AcceptEntityInput(MakeCompatEntRef(GetEntProp(index, Prop_Send, "m_customAbility")), "Kill");
+  for (new entity = 1; entity < MaxClients; entity++) {
+    if (IsClientInGame(entity) && GetClientTeam(entity) == 3) {
+      ChangeClientTeam(entity, 1);
+      ChangeClientTeam(entity, 3);
+      //Waiting for survivors to leave the safe area
     }
   }
 }
@@ -1127,4 +1157,45 @@ ResetSILimits() {
   ResetConVar(z_versus_jockey_limit);
 }
 
+public Action:SurvivorsLeaveSaferoomTimer(Handle:timer)
+{
+
+  new score;
+	for (new i = 0; i < 4; i++)
+	{
+    score += GameRules_GetProp("m_iVersusDistancePerSurvivor", 4, i);
+	}
+	if (score > 0)
+	{
+    PrintToChatAll("Safe room left!");
+    CloseHandle(timer);
+    inFreeRoam = false;
+    inSecondSafeRoomLeave = false;
+		return Plugin_Handled;
+	}
+	return Plugin_Continue;
+}
+
+ForceGhostStates(states) {
+  for (new entity = 1; entity < MaxClients; entity++) {
+    if (IsClientInGame(entity) && GetClientTeam(entity) == 3) {
+      new state = GetEntProp(entity, Prop_Send, "m_ghostSpawnState");
+      SetEntProp(entity, Prop_Send, "m_ghostSpawnState", state | states);
+    }
+  }
+}
+
+ResetGhostStates(states) {
+  for (new entity = 1; entity < MaxClients; entity++) {
+    if (IsClientInGame(entity) && GetClientTeam(entity) == 3) {
+      new state = GetEntProp(entity, Prop_Send, "m_ghostSpawnState");
+      SetEntProp(entity, Prop_Send, "m_ghostSpawnState", state & ~states);
+    }
+  }
+}
+
+//Checks if the player is currently a ghost
+bool:IsPlayerSpawnGhost(client) {
+	return GetEntData(client, propinfoghost, 1);
+}
 
